@@ -101,7 +101,7 @@ fn main() -> Result<()> {
     let b2=*(color2_num.get(2).unwrap()); 
 
 
-    set_color(&mut handle, [r1, g1, b1], [r2, b2, g2])?;
+    set_color(&mut handle, [r1, g1, b1], [r2, g2, b2])?;
 
     handle.release_interface(endpoint.iface)?;
     if has_kernel_driver {
