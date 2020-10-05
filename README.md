@@ -1,4 +1,4 @@
-# QcKPrism - A SteelSeries QcK Prism Cloth XL controll utility
+## QcKPrism - A SteelSeries QcK Prism Cloth XL controll utility
 
 Since SteelSeries does not provide ways to control their QcK Prism Cloth XL under linux (SteelSeries Engine Software is available only under Windows or MacOS).
 I didn't want to stay stuck with default lighting, so i made this simple utility allow a simple RGB control. 
