@@ -10,7 +10,7 @@ pub struct Args {
     pub light_level: u8,
 }
 
-pub fn fetch_args() -> Args {
+pub fn fetch_cli_args() -> Args {
     let matches = App::new("SteelSeries QCK Prism XL RGB driver")
         .version("0.1")
         .author("Jakub Maciej <zapp88@gmail.com>")
