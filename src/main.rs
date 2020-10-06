@@ -100,8 +100,9 @@ fn main() -> Result<()> {
     let g2=*(color2_num.get(1).unwrap()); 
     let b2=*(color2_num.get(2).unwrap()); 
 
-
     set_color(&mut handle, [r1, g1, b1], [r2, g2, b2])?;
+
+    send_ack(&mut handle)?;
 
     handle.release_interface(endpoint.iface)?;
     if has_kernel_driver {
@@ -166,7 +167,11 @@ fn configure_endpoint<T: UsbContext>(
     handle: &mut DeviceHandle<T>,
     endpoint: &Endpoint,
 ) -> Result<()> {
-    handle.set_active_configuration(endpoint.config)?;
+    //Setting same configuration as active twice results in "device is bussy error"
+    //So we make sure we don't set it again when it is already active
+    if handle.active_configuration()? != endpoint.config {
+        handle.set_active_configuration(endpoint.config)?;
+    }
     handle.claim_interface(endpoint.iface)?;
     handle.set_alternate_setting(endpoint.iface, endpoint.setting)
 }
@@ -209,8 +214,6 @@ fn set_light<T: UsbContext>(light: u8, handle: &mut DeviceHandle<T>) -> Result<(
     const INDEX: u16 = 0x0000;
 
     handle.write_control(REQUEST_TYPE, REQUEST, VALUE, INDEX, &command, timeout)?;
-
-    send_ack(handle)?;
 
     Ok(())
 }
@@ -268,8 +271,6 @@ fn set_color<T: UsbContext>(
     const INDEX: u16 = 0x0000;
 
     handle.write_control(REQUEST_TYPE, REQUEST, VALUE, INDEX, &command, timeout)?;
-
-    send_ack(handle)?;
 
     Ok(())
 }
