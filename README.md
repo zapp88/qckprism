@@ -11,16 +11,12 @@ I don't have any way to test if it works on other VID/PID devices from steelseri
 
 Known issues:
 * Linux:
-
-        Running utility may require 'sudo'. If you don't want to run utility with sudo you can create an udev rule, creating file /etc/udev/rules.d/75-qck-prism.rules
-        with content : SUBSYSTEM=="usb", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="150d", TAG+="uaccess" - this will give acess to our device to normal processes.
-
-        You can do that running command: 
-        > sudo echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="150d", TAG+="uaccess"' > /etc/udev/rules.d/75-qck-prism.rules
+    * Running utility may require 'sudo'. If you don't want to run utility with sudo you can create an udev rule, creating file /etc/udev/rules.d/75-qck-prism.rules with content : SUBSYSTEM=="usb", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="150d", TAG+="uaccess" - this will give acess to our device to normal processes.
+    * You can do that running command: 
+    > sudo echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="150d", TAG+="uaccess"' > /etc/udev/rules.d/75-qck-prism.rules
 
 * MacOS:
-
-        While utility should work in theory on MacOS in most cases you will get Error:Access, this is a result of how Mac handles HID devices. Our app can't 'claim' 
+    * While utility should work in theory on MacOS in most cases you will get Error:Access, this is a result of how Mac handles HID devices. Our app can't 'claim' 
         'device' since its claimed by kernel, on linux we can circumvent that detaching it from kernel but on MacOS there is no such option. Only way to make it work on mac would be to write our own
         .kext (kernel extension) that would clame device before the system. There are quite few ongoing issus regarding that matter : eg. https://github.com/tessel/node-usb/issues/30
     
