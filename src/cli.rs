@@ -1,8 +1,8 @@
 extern crate clap;
 extern crate hex;
 
-use clap::{App, Arg};
 use crate::qck;
+use clap::{App, Arg};
 
 pub struct Args {
     pub first_color: qck::Color,
@@ -17,7 +17,7 @@ pub fn fetch_cli_args() -> Args {
         .about("This utility allows you to control RGB lighting on youre QCK Prism XL")
         .arg(
             Arg::with_name("light")
-                .short("l")
+                .short('l')
                 .long("light")
                 .value_name("LIGHT")
                 .help("Sets light level (0-255)")
@@ -25,7 +25,7 @@ pub fn fetch_cli_args() -> Args {
         )
         .arg(
             Arg::with_name("color1")
-                .short("a")
+                .short('a')
                 .long("color1")
                 .value_name("COLOR1")
                 .help("Sets LED1 color in hex (eg. FF00FF)")
@@ -34,7 +34,7 @@ pub fn fetch_cli_args() -> Args {
         )
         .arg(
             Arg::with_name("color2")
-                .short("b")
+                .short('b')
                 .long("color2")
                 .value_name("COLOR2")
                 .help("Sets LED2 color in hex (eg. FF00FF)")
