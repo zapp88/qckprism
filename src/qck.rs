@@ -153,16 +153,12 @@ fn configure_endpoint<T: UsbContext>(
 /// Sends an acknowledgment command to the device
 fn send_ack<T: UsbContext>(handle: &mut DeviceHandle<T>) -> Result<usize> {
     // Values are picked directly from the captured packet
-    const ACK: [u8; 64] = [
-        0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00,
-    ];
+    // First byte is 0x0d, the rest are zeros
+    let mut ack = [0u8; 64];
+    ack[0] = 0x0d;
 
     let bytes_written = handle
-        .write_control(REQUEST_TYPE, REQUEST, ACK_VALUE, INDEX, &ACK, TIMEOUT)
+        .write_control(REQUEST_TYPE, REQUEST, ACK_VALUE, INDEX, &ack, TIMEOUT)
         .map_err(QckError::UsbError)?;
         
     Ok(bytes_written)
@@ -170,9 +166,12 @@ fn send_ack<T: UsbContext>(handle: &mut DeviceHandle<T>) -> Result<usize> {
 
 /// Sets the light level on the device
 fn set_light<T: UsbContext>(light: u8, handle: &mut DeviceHandle<T>) -> Result<()> {
+    // Initialize command buffer with zeros
     let mut command = [0u8; 64];
-    command[0] = 0x0c;
-    command[2] = light;
+    
+    // Set specific bytes for the light command
+    command[0] = 0x0c;  // Command identifier
+    command[2] = light; // Light level
 
     handle
         .write_control(REQUEST_TYPE, REQUEST, LIGHT_VALUE, INDEX, &command, TIMEOUT)
@@ -187,29 +186,32 @@ fn set_color<T: UsbContext>(
     color1: Color,
     color2: Color,
 ) -> Result<()> {
+    // Initialize command buffer with zeros
     let mut command = [0u8; 524];
     
-    // Header and first color
-    command[0] = 0x0e;
-    command[2] = 0x02;
+    // Set header bytes
+    command[0] = 0x0e;  // Command identifier
+    command[2] = 0x02;  // Number of colors
+    
+    // Set first color data
     command[4] = color1.r;
     command[5] = color1.g;
     command[6] = color1.b;
-    command[7] = 0xff;
-    command[8] = 0x32;
-    command[9] = 0xc8;
-    command[13] = 0x01;
+    command[7] = 0xff;  // Alpha (full opacity)
+    command[8] = 0x32;  // Effect speed (50)
+    command[9] = 0xc8;  // Effect intensity (200)
+    command[13] = 0x01; // Effect flag
     
-    // Second color
+    // Set second color data
     command[16] = color2.r;
     command[17] = color2.g;
     command[18] = color2.b;
-    command[19] = 0xff;
-    command[20] = 0x32;
-    command[21] = 0xc8;
-    command[24] = 0x01;
-    command[25] = 0x01;
-    command[27] = 0x01;
+    command[19] = 0xff;  // Alpha (full opacity)
+    command[20] = 0x32;  // Effect speed (50)
+    command[21] = 0xc8;  // Effect intensity (200)
+    command[24] = 0x01;  // Effect flag 1
+    command[25] = 0x01;  // Effect flag 2
+    command[27] = 0x01;  // Effect flag 3
 
     handle
         .write_control(REQUEST_TYPE, REQUEST, COLOR_VALUE, INDEX, &command, TIMEOUT)
