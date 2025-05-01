@@ -11,9 +11,6 @@ pub enum QckError {
     #[error("No configurable endpoints found on device")]
     NoEndpointsFound,
 
-    #[error("Invalid light level: {0}. Must be between 0 and 255")]
-    InvalidLightLevel(i32),
-
     #[error("Invalid color format: {0}. Must be a 6-digit hex value (e.g., FF00FF)")]
     InvalidColorFormat(String),
 
