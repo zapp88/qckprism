@@ -11,9 +11,6 @@ pub enum QckError {
     #[error("No configurable endpoints found on device")]
     NoEndpointsFound,
 
-    #[error("Invalid color format: {0}. Must be a 6-digit hex value (e.g., FF00FF)")]
-    InvalidColorFormat(String),
-
     #[error("Failed to decode hex color: {0}")]
     HexDecodeError(#[from] hex::FromHexError),
 }
