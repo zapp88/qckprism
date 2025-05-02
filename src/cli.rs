@@ -102,11 +102,8 @@ fn parse_hex_color(color_str: &str) -> Result<qck::Color> {
         return Err(QckError::InvalidColorFormat(color_str.to_string()));
     }
 
-    Ok(qck::Color {
-        r: decoded[0],
-        g: decoded[1],
-        b: decoded[2],
-    })
+    // Use the Color constructor
+    Ok(qck::Color::new(decoded[0], decoded[1], decoded[2]))
 }
 
 /// Parse command line arguments and return validated Args
