@@ -1,29 +1,33 @@
+//! SteelSeries QCK Prism XL RGB driver
+//! 
+//! This utility allows controlling RGB lighting on a SteelSeries QCK Prism XL mousepad.
+//! It uses USB HID commands to configure the colors and brightness of the device.
+
 mod cli;
-mod qck;
 mod error;
+mod qck;
 
 use error::Result;
 use std::process;
 
+/// Application entry point
 fn main() {
     // Run the application and handle any errors
     if let Err(err) = run() {
-        eprintln!("Error: {}", err);
+        eprintln!("Error: {err}");
         process::exit(1);
     }
 }
 
+/// Main application logic
 fn run() -> Result<()> {
     // Parse command line arguments
-    let args = cli::fetch_cli_args()?;
+    let args = cli::parse_args()?;
     
-    // Send command to the device
-    qck::send_to_device(qck::Command {
-        light_level: args.light_level,
-        first_color: args.first_color,
-        second_color: args.second_color,
-    })?;
+    // Convert args to command and send to the device
+    let command = qck::Command::from(args);
+    qck::send_to_device(command)?;
     
-    println!("Successfully sent command to QCK Prism XL device");
+    println!("Successfully configured QCK Prism XL device");
     Ok(())
 }
