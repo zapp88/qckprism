@@ -14,8 +14,8 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    // Parse command line arguments
-    let args = cli::fetch_cli_args()?;
+    // Parse command line arguments (exits on error)
+    let args = cli::fetch_cli_args();
     
     // Send command to the device
     qck::send_to_device(qck::Command {
