@@ -89,24 +89,12 @@ impl From<CliArgs> for Args {
 
 /// Parse a hex color string (e.g., "FF00FF") into an RGB Color
 fn parse_hex_color(color_str: &str) -> Result<qck::Color> {
-    // Validate the color string format (should be 6 hex characters)
-    if color_str.len() != 6 || !color_str.chars().all(|c| c.is_ascii_hexdigit()) {
-        return Err(QckError::InvalidColorFormat(color_str.to_string()));
-    }
-
-    // Decode the hex string
     let decoded = hex::decode(color_str)?;
-    
-    // Ensure we have exactly 3 bytes (RGB)
-    if decoded.len() != 3 {
-        return Err(QckError::InvalidColorFormat(color_str.to_string()));
-    }
 
-    Ok(qck::Color {
-        r: decoded[0],
-        g: decoded[1],
-        b: decoded[2],
-    })
+    match decoded.as_slice() {
+        [r, g, b] => Ok(qck::Color { r: *r, g: *g, b: *b }),
+        _ => Err(QckError::InvalidColorFormat(color_str.to_string())),
+    }
 }
 
 /// Parse command line arguments and return validated Args

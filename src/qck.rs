@@ -82,36 +82,32 @@ fn open_device<T: UsbContext>(
     vid: u16,
     pid: u16,
 ) -> Result<(Device<T>, DeviceHandle<T>)> {
-    let devices = context.devices().map_err(QckError::UsbError)?;
-
-    for device in devices.iter() {
-        let device_desc = match device.device_descriptor() {
-            Ok(d) => d,
-            Err(_) => continue,
-        };
-
-        if device_desc.vendor_id() == vid && device_desc.product_id() == pid {
-            match device.open() {
-                Ok(handle) => return Ok((device, handle)),
-                Err(_) => continue,
+    context.devices()
+        .map_err(QckError::UsbError)?
+        .iter()
+        .filter_map(|device| {
+            let device_desc = device.device_descriptor().ok()?;
+            if device_desc.vendor_id() == vid && device_desc.product_id() == pid {
+                device.open().ok().map(|handle| (device, handle))
+            } else {
+                None
             }
-        }
-    }
-
-    Err(QckError::DeviceNotFound(vid, pid))
+        })
+        .next()
+        .ok_or(QckError::DeviceNotFound(vid, pid))
 }
 
 /// Finds all readable endpoints on the device
 fn find_readable_endpoints<T: UsbContext>(device: &mut Device<T>) -> Result<Vec<Endpoint>> {
     let device_desc = device.device_descriptor().map_err(QckError::UsbError)?;
     let mut endpoints = vec![];
-    
+
     for n in 0..device_desc.num_configurations() {
         let config_desc = match device.config_descriptor(n) {
             Ok(c) => c,
-            Err(_) => continue,
+            Err(_) => continue, // Skip if config descriptor cannot be read
         };
-        
+
         for interface in config_desc.interfaces() {
             for interface_desc in interface.descriptors() {
                 for _endpoint_desc in interface_desc.endpoint_descriptors() {
