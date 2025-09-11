@@ -3,17 +3,8 @@ mod error;
 mod qck;
 
 use error::Result;
-use std::process;
 
-fn main() {
-    // Run the application and handle any errors
-    if let Err(err) = run() {
-        eprintln!("Error: {}", err);
-        process::exit(1);
-    }
-}
-
-fn run() -> Result<()> {
+fn main() -> Result<()> {
     // Parse command line arguments
     let args = cli::fetch_cli_args();
 
