@@ -1,54 +1,6 @@
-use clap::{Parser, builder::TypedValueParser};
+use clap::Parser;
+
 use crate::qck;
-use crate::error::{QckError, Result};
-
-/// A parser for hex color strings (e.g., "FF00FF")
-#[derive(Clone, Debug)]
-struct HexColorParser;
-
-impl TypedValueParser for HexColorParser {
-    type Value = qck::Color;
-
-    fn parse_ref(
-        &self,
-        _cmd: &clap::Command,
-        arg: Option<&clap::Arg>,
-        value: &std::ffi::OsStr,
-    ) -> std::result::Result<Self::Value, clap::Error> {
-        let value_str = value.to_str().ok_or_else(|| {
-            let mut err = clap::Error::new(clap::error::ErrorKind::InvalidUtf8);
-            err.insert(
-                clap::error::ContextKind::InvalidArg,
-                clap::error::ContextValue::String(arg.map_or_else(
-                    || "color".to_string(),
-                    |a| a.get_id().to_string(),
-                )),
-            );
-            err
-        })?;
-
-        parse_hex_color(value_str)
-            .map_err(|e| {
-                let mut err = clap::Error::new(clap::error::ErrorKind::InvalidValue);
-                err.insert(
-                    clap::error::ContextKind::InvalidArg,
-                    clap::error::ContextValue::String(arg.map_or_else(
-                        || "color".to_string(),
-                        |a| a.get_id().to_string(),
-                    )),
-                );
-                err.insert(
-                    clap::error::ContextKind::InvalidValue,
-                    clap::error::ContextValue::String(value_str.to_string()),
-                );
-                err.insert(
-                    clap::error::ContextKind::Custom,
-                    clap::error::ContextValue::String(e.to_string()),
-                );
-                err
-            })
-    }
-}
 
 /// Command line arguments for the QCK Prism XL RGB driver
 #[derive(Parser)]
@@ -58,15 +10,15 @@ impl TypedValueParser for HexColorParser {
 #[command(about = "This utility allows you to control RGB lighting on your QCK Prism XL")]
 pub struct CliArgs {
     /// Sets light level (0-255)
-    #[arg(short = 'l', long = "light", default_value = "255", value_parser = clap::value_parser!(u8).range(0..=255))]
+    #[arg(short = 'l', long = "light", default_value_t = 255, value_parser = clap::value_parser!(u8).range(0..=255))]
     light: u8,
 
     /// Sets LED1 color in hex (eg. FF00FF)
-    #[arg(short = 'a', long = "color1", required = true, value_parser = HexColorParser)]
+    #[arg(short = 'a', long = "color1", required = true)]
     color1: qck::Color,
 
     /// Sets LED2 color in hex (eg. FF00FF)
-    #[arg(short = 'b', long = "color2", required = true, value_parser = HexColorParser)]
+    #[arg(short = 'b', long = "color2", required = true)]
     color2: qck::Color,
 }
 
@@ -87,30 +39,7 @@ impl From<CliArgs> for Args {
     }
 }
 
-/// Parse a hex color string (e.g., "FF00FF") into an RGB Color
-fn parse_hex_color(color_str: &str) -> Result<qck::Color> {
-    // Validate the color string format (should be 6 hex characters)
-    if color_str.len() != 6 || !color_str.chars().all(|c| c.is_ascii_hexdigit()) {
-        return Err(QckError::InvalidColorFormat(color_str.to_string()));
-    }
-
-    // Decode the hex string
-    let decoded = hex::decode(color_str)?;
-    
-    // Ensure we have exactly 3 bytes (RGB)
-    if decoded.len() != 3 {
-        return Err(QckError::InvalidColorFormat(color_str.to_string()));
-    }
-
-    Ok(qck::Color {
-        r: decoded[0],
-        g: decoded[1],
-        b: decoded[2],
-    })
-}
-
 /// Parse command line arguments and return validated Args
-pub fn fetch_cli_args() -> Result<Args> {
-    let cli_args = CliArgs::parse();
-    Ok(Args::from(cli_args))
+pub fn fetch_cli_args() -> Args {
+    CliArgs::parse().into()
 }

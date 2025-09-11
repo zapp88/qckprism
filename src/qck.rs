@@ -1,5 +1,7 @@
 use rusb::{Context, Device, DeviceHandle, UsbContext};
+use std::str::FromStr;
 use std::time::Duration;
+
 use crate::error::{QckError, Result};
 
 // QCK Prism XL device identifiers
@@ -14,6 +16,25 @@ const LIGHT_VALUE: u16 = 0x0200;
 const COLOR_VALUE: u16 = 0x0300;
 const INDEX: u16 = 0x0000;
 const TIMEOUT: Duration = Duration::from_secs(1);
+
+// Command identifiers and default values
+const ACK_CMD_ID: u8 = 0x0d;
+const LIGHT_CMD_ID: u8 = 0x0c;
+const COLOR_CMD_ID: u8 = 0x0e;
+const COLOR_COUNT: u8 = 0x02;
+const ALPHA_MAX: u8 = 0xff;
+const EFFECT_SPEED: u8 = 0x32;
+const EFFECT_INTENSITY: u8 = 0xc8;
+const EFFECT_FLAG: u8 = 0x01;
+
+fn write_color_segment(buf: &mut [u8], offset: usize, color: Color) {
+    buf[offset] = color.r;
+    buf[offset + 1] = color.g;
+    buf[offset + 2] = color.b;
+    buf[offset + 3] = ALPHA_MAX;
+    buf[offset + 4] = EFFECT_SPEED;
+    buf[offset + 5] = EFFECT_INTENSITY;
+}
 
 /// Represents a USB endpoint configuration
 #[derive(Debug, Clone)]
@@ -38,11 +59,33 @@ pub struct Color {
     pub b: u8,
 }
 
+impl FromStr for Color {
+    type Err = QckError;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let s = s.trim();
+        if s.len() != 6 || !s.chars().all(|c| c.is_ascii_hexdigit()) {
+            return Err(QckError::InvalidColorFormat(s.to_string()));
+        }
+
+        let decoded = hex::decode(s)?;
+        if decoded.len() != 3 {
+            return Err(QckError::InvalidColorFormat(s.to_string()));
+        }
+
+        Ok(Color {
+            r: decoded[0],
+            g: decoded[1],
+            b: decoded[2],
+        })
+    }
+}
+
 /// Sends a command to the QCK Prism XL device
 pub fn send_to_device(command: Command) -> Result<()> {
     // Initialize USB context
     let mut context = Context::new().map_err(QckError::UsbError)?;
-    
+
     // Open the device
     let (mut device, mut handle) = open_device(&mut context, VID, PID)?;
 
@@ -53,7 +96,9 @@ pub fn send_to_device(command: Command) -> Result<()> {
     // Handle kernel driver if active
     let has_kernel_driver = match handle.kernel_driver_active(endpoint.iface) {
         Ok(true) => {
-            handle.detach_kernel_driver(endpoint.iface).map_err(QckError::UsbError)?;
+            handle
+                .detach_kernel_driver(endpoint.iface)
+                .map_err(QckError::UsbError)?;
             true
         }
         _ => false,
@@ -68,11 +113,15 @@ pub fn send_to_device(command: Command) -> Result<()> {
     send_ack(&mut handle)?;
 
     // Cleanup: release interface and reattach kernel driver if needed
-    handle.release_interface(endpoint.iface).map_err(QckError::UsbError)?;
+    handle
+        .release_interface(endpoint.iface)
+        .map_err(QckError::UsbError)?;
     if has_kernel_driver {
-        handle.attach_kernel_driver(endpoint.iface).map_err(QckError::UsbError)?;
+        handle
+            .attach_kernel_driver(endpoint.iface)
+            .map_err(QckError::UsbError)?;
     }
-    
+
     Ok(())
 }
 
@@ -105,13 +154,13 @@ fn open_device<T: UsbContext>(
 fn find_readable_endpoints<T: UsbContext>(device: &mut Device<T>) -> Result<Vec<Endpoint>> {
     let device_desc = device.device_descriptor().map_err(QckError::UsbError)?;
     let mut endpoints = vec![];
-    
+
     for n in 0..device_desc.num_configurations() {
         let config_desc = match device.config_descriptor(n) {
             Ok(c) => c,
             Err(_) => continue,
         };
-        
+
         for interface in config_desc.interfaces() {
             for interface_desc in interface.descriptors() {
                 for _endpoint_desc in interface_desc.endpoint_descriptors() {
@@ -141,12 +190,18 @@ fn configure_endpoint<T: UsbContext>(
     // So we make sure we don't set it again when it is already active
     let active_config = handle.active_configuration().map_err(QckError::UsbError)?;
     if active_config != endpoint.config {
-        handle.set_active_configuration(endpoint.config).map_err(QckError::UsbError)?;
+        handle
+            .set_active_configuration(endpoint.config)
+            .map_err(QckError::UsbError)?;
     }
-    
-    handle.claim_interface(endpoint.iface).map_err(QckError::UsbError)?;
-    handle.set_alternate_setting(endpoint.iface, endpoint.setting).map_err(QckError::UsbError)?;
-    
+
+    handle
+        .claim_interface(endpoint.iface)
+        .map_err(QckError::UsbError)?;
+    handle
+        .set_alternate_setting(endpoint.iface, endpoint.setting)
+        .map_err(QckError::UsbError)?;
+
     Ok(())
 }
 
@@ -155,12 +210,12 @@ fn send_ack<T: UsbContext>(handle: &mut DeviceHandle<T>) -> Result<usize> {
     // Values are picked directly from the captured packet
     // First byte is 0x0d, the rest are zeros
     let mut ack = [0u8; 64];
-    ack[0] = 0x0d;
+    ack[0] = ACK_CMD_ID;
 
     let bytes_written = handle
         .write_control(REQUEST_TYPE, REQUEST, ACK_VALUE, INDEX, &ack, TIMEOUT)
         .map_err(QckError::UsbError)?;
-        
+
     Ok(bytes_written)
 }
 
@@ -168,9 +223,9 @@ fn send_ack<T: UsbContext>(handle: &mut DeviceHandle<T>) -> Result<usize> {
 fn set_light<T: UsbContext>(light: u8, handle: &mut DeviceHandle<T>) -> Result<()> {
     // Initialize command buffer with zeros
     let mut command = [0u8; 64];
-    
+
     // Set specific bytes for the light command
-    command[0] = 0x0c;  // Command identifier
+    command[0] = LIGHT_CMD_ID; // Command identifier
     command[2] = light; // Light level
 
     handle
@@ -188,30 +243,20 @@ fn set_color<T: UsbContext>(
 ) -> Result<()> {
     // Initialize command buffer with zeros
     let mut command = [0u8; 524];
-    
+
     // Set header bytes
-    command[0] = 0x0e;  // Command identifier
-    command[2] = 0x02;  // Number of colors
-    
+    command[0] = COLOR_CMD_ID; // Command identifier
+    command[2] = COLOR_COUNT; // Number of colors
+
     // Set first color data
-    command[4] = color1.r;
-    command[5] = color1.g;
-    command[6] = color1.b;
-    command[7] = 0xff;  // Alpha (full opacity)
-    command[8] = 0x32;  // Effect speed (50)
-    command[9] = 0xc8;  // Effect intensity (200)
-    command[13] = 0x01; // Effect flag
-    
+    write_color_segment(&mut command, 4, color1);
+    command[13] = EFFECT_FLAG; // Effect flag
+
     // Set second color data
-    command[16] = color2.r;
-    command[17] = color2.g;
-    command[18] = color2.b;
-    command[19] = 0xff;  // Alpha (full opacity)
-    command[20] = 0x32;  // Effect speed (50)
-    command[21] = 0xc8;  // Effect intensity (200)
-    command[24] = 0x01;  // Effect flag 1
-    command[25] = 0x01;  // Effect flag 2
-    command[27] = 0x01;  // Effect flag 3
+    write_color_segment(&mut command, 16, color2);
+    command[24] = EFFECT_FLAG; // Effect flag 1
+    command[25] = EFFECT_FLAG; // Effect flag 2
+    command[27] = EFFECT_FLAG; // Effect flag 3
 
     handle
         .write_control(REQUEST_TYPE, REQUEST, COLOR_VALUE, INDEX, &command, TIMEOUT)
