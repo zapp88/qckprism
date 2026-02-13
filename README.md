@@ -37,5 +37,3 @@ OPTIONS:
      -l, --light <LIGHT>      Sets light level (0-255)
   
  LED flags are required. For now only static light is supported.
-
-git filter-branch -f --env-filter 'export GIT_COMMITTER_DATE="$(date -d "@$(( $(date -d "$GIT_COMMITTER_DATE" +%s) + 864000 ))" "+%a %b %d %H:%M:%S %Y %z")"; export GIT_AUTHOR_DATE="$(date -d "@$(( $(date -d "$GIT_AUTHOR_DATE" +%s) + 864000 ))" "+%a %b %d %H:%M:%S %Y %z")"' -- HEAD~10..HEAD
