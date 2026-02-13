@@ -38,4 +38,4 @@ OPTIONS:
   
  LED flags are required. For now only static light is supported.
 
- git rebase -i HEAD~10 -x "powershell -Command `"`$d=[datetime]::ParseExact(`$env:GIT_COMMITTER_DATE,'ddd MMM d HH:mm:ss yyyy zzz',`$null).AddDays(10); `$env:GIT_COMMITTER_DATE=`$d.ToString('ddd MMM d HH:mm:ss yyyy zzz'); git commit --amend --no-edit --date=`"`$env:GIT_COMMITTER_DATE`"`""
+git filter-branch -f --env-filter 'export GIT_COMMITTER_DATE="$(date -d "@$(( $(date -d "$GIT_COMMITTER_DATE" +%s) + 864000 ))" "+%a %b %d %H:%M:%S %Y %z")"; export GIT_AUTHOR_DATE="$(date -d "@$(( $(date -d "$GIT_AUTHOR_DATE" +%s) + 864000 ))" "+%a %b %d %H:%M:%S %Y %z")"' -- HEAD~10..HEAD
