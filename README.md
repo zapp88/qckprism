@@ -37,3 +37,5 @@ OPTIONS:
      -l, --light <LIGHT>      Sets light level (0-255)
   
  LED flags are required. For now only static light is supported.
+
+ git rebase -i HEAD~10 -x "powershell -Command `"`$d=[datetime]::ParseExact(`$env:GIT_COMMITTER_DATE,'ddd MMM d HH:mm:ss yyyy zzz',`$null).AddDays(10); `$env:GIT_COMMITTER_DATE=`$d.ToString('ddd MMM d HH:mm:ss yyyy zzz'); git commit --amend --no-edit --date=`"`$env:GIT_COMMITTER_DATE`"`""
