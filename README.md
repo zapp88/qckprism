@@ -1,3 +1,5 @@
+
+
 # QcKPrism
 
 QcKPrism is a small cross-platform CLI utility for controlling the RGB
@@ -33,7 +35,7 @@ qckprism [OPTIONS] --color1 <HEX> --color2 <HEX>
 
 - `-a, --color1 <HEX>` – Sets LED1 color in hex (e.g. `FF00FF`)
 - `-b, --color2 <HEX>` – Sets LED2 color in hex (e.g. `FF00FF`)
-- `-l, --light <LIGHT>` – Sets light level (0‑255)
+- `-l, --light <LIGHT>` – Sets light level (0‑255, defaults to 255)
 - `-h, --help` – Prints help information
 - `-V, --version` – Prints version information
 
@@ -61,4 +63,3 @@ supported.
   custom kernel extension would be required to claim the device before
   the system does. See [tessel/node-usb#30](https://github.com/tessel/node-usb/issues/30)
   for more information.
-
